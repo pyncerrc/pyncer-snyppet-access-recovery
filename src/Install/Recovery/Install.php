@@ -4,6 +4,7 @@ namespace Pyncer\Snyppet\Access\Install\Recovery;
 use Pyncer\Database\Table\Column\IntSize;
 use Pyncer\Database\Table\ReferentialAction;
 use Pyncer\Snyppet\AbstractInstall;
+use Pyncer\Snyppet\Config\ConfigManager;
 
 use const Pyncer\Snyppet\Access\RECOVERY_TOKEN_EXPIRATION as PYNCER_ACCESS_RECOVERY_TOKEN_EXPIRATION;
 use const Pyncer\Snyppet\Access\RECOVERY_CODE_LENGTH as PYNCER_ACCESS_RECOVERY_CODE_LENGTH;
