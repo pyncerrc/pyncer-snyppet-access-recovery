@@ -1,0 +1,29 @@
+{
+    "name": "pyncer/snyppet-access-recovery",
+    "type": "library",
+    "description": "Pyncer snyppet for handling access recovery.",
+    "homepage": "https://pyncer.com/snyppet/access/recovery",
+    "license": "Unlicense",
+    "require": {
+        "php": ">=8.1",
+        "pyncer/snyppet-access": "^1.0.0"
+    },
+    "autoload": {
+        "files": ["src/autoload.php"],
+        "psr-4": {
+            "Pyncer\\Snyppet\\Access\\": "src/"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/pyncerrc/pyncer-snyppet-access-recovery/issues",
+        "source": "https://github.com/pyncerrc/pyncer-snyppet-access-recovery"
+    },
+    "extra" : {
+        "snyppet": {
+            "install": "Recovery"
+        },
+        "branch-alias" : {
+            "dev-main" : "1.0-dev"
+        }
+    }
+}
