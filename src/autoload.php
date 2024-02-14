@@ -3,7 +3,6 @@ use Pyncer\Snyppet\Snyppet;
 use Pyncer\Snyppet\SnyppetManager;
 
 SnyppetManager::register(new Snyppet(
-    'access',
+    'access-recovery',
     dirname(__DIR__),
-    [],
 ));
