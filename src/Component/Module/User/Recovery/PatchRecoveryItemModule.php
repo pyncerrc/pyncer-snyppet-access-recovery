@@ -4,6 +4,8 @@ namespace Pyncer\Snyppet\Access\Component\Module\User\Recovery;
 use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Pyncer\App\Identifier as ID;
 use Pyncer\Component\Module\AbstractModule;
+use Pyncer\Exception\UnexpectedValueException;
+use Pyncer\Routing\Path\RoutingPathInterface;
 use Pyncer\Snyppet\Access\Table\User\UserMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryModel;
@@ -15,8 +17,19 @@ use const PASSWORD_DEFAULT;
 
 class PatchRecoveryItemModule extends AbstractModule
 {
-    private ?PasswordConfig $passwordConfig = null;
-    private ?PasswordConfig $defaultPasswordConfig = null;
+    protected ?RoutingPathInterface $idRoutingPath = null;
+    protected ?PasswordConfig $passwordConfig = null;
+    protected ?PasswordConfig $defaultPasswordConfig = null;
+
+    public function getIdRoutingPath(): ?RoutingPathInterface
+    {
+        return $this->idRoutingPath;
+    }
+    public function setIdRoutingPath(?RoutingPathInterface $value): static
+    {
+        $this->idRoutingPath = $value;
+        return $this;
+    }
 
     public function getPasswordConfig(): ?PasswordConfig
     {
@@ -40,9 +53,18 @@ class PatchRecoveryItemModule extends AbstractModule
 
     protected function getPrimaryResponse(): PsrResponseInterface
     {
-        $data = $this->getRequestItemData();
+        $idRoutingPath = $this->getIdRoutingPath()?->getRouteDirPath() ?? '@id64';
+        if ($idRoutingPath === '@id64') {
+            $token = $this->queryParams->getString(
+                $this->getIdRoutingPath()?->getQueryName() ?? 'id64',
+                null
+            );
+        } else {
 
-        $token = pyncer_string_nullify($data['token']);
+            throw new UnexpectedValueException(
+                'Id routing path is not supported. (' . $idRoutingPath . ')'
+            );
+        }
 
         if ($token === null) {
             return new Response(
@@ -70,6 +92,8 @@ class PatchRecoveryItemModule extends AbstractModule
                 Status::CLIENT_ERROR_404_NOT_FOUND
             );
         }
+
+        $data = $this->getRequestItemData();
 
         [$data, $errors] = $this->validateItemData($data);
 
@@ -109,7 +133,6 @@ class PatchRecoveryItemModule extends AbstractModule
             $keys = ['password'];
         }
 
-        $keys[] = 'recovery_token';
         $keys[] = 'code';
 
         return $keys;

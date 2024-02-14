@@ -1,6 +1,7 @@
 <?php
 namespace Pyncer\Snyppet\Access\Component\Module\User\Recovery;
 
+use DateInterval;
 use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Pyncer\App\Identifier as ID;
 use Pyncer\Component\Module\AbstractModule;
@@ -254,12 +255,12 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             );
         }
 
-        $dateTime = pyncer_date_time();
-        $dateTime->add(new DateInterval('PT' . $this->getRecoveryTokenExpiration() . 'S'));
+        $expirationDateTime = pyncer_date_time();
+        $expirationDateTime->add(new DateInterval('PT' . $this->getRecoveryTokenExpiration() . 'S'));
 
-        // If there is no user model then validate login not found is off so
-        // fake a successful request
-        if ($userModel === null) {
+        // If there is no user model or email and phone then validate login
+        // not found is off so fake a successful request
+        if ($userModel === null || ($email === null && $phone === null)) {
             return new JsonResponse(
                 Status::SUCCESS_201_CREATED,
                 [
