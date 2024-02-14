@@ -50,6 +50,11 @@ class PatchRecoveryItemModule extends AbstractModule
 
         return $this->defaultPasswordConfig;
     }
+    public function setPasswordConfig(?PasswordConfig $value): static
+    {
+        $this->passwordConfig = $value;
+        return $this;
+    }
 
     protected function getPrimaryResponse(): PsrResponseInterface
     {
