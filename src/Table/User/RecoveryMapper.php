@@ -21,4 +21,13 @@ class RecoveryMapper extends AbstractMapper
     {
         return ($model instanceof RecoveryModel);
     }
+
+    public function selectByToken(
+        string $token,
+    ): ?ModelInterface
+    {
+        return $this->selectByColumns(
+            ['token' => $token],
+        );
+    }
 }

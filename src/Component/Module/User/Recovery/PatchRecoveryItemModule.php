@@ -4,6 +4,9 @@ namespace Pyncer\Snyppet\Access\Component\Module\User\Recovery;
 use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Pyncer\App\Identifier as ID;
 use Pyncer\Component\Module\AbstractModule;
+use Pyncer\Http\Message\JsonResponse;
+use Pyncer\Http\Message\Response;
+use Pyncer\Http\Message\Status;
 use Pyncer\Exception\UnexpectedValueException;
 use Pyncer\Routing\Path\RoutingPathInterface;
 use Pyncer\Snyppet\Access\Table\User\UserMapper;
@@ -11,6 +14,7 @@ use Pyncer\Snyppet\Access\Table\User\RecoveryMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryModel;
 use Pyncer\Snyppet\Access\User\PasswordConfig;
 
+use function Pyncer\Array\ensure_keys as pyncer_array_ensure_keys;
 use function Pyncer\String\nullify as pyncer_string_nullify;
 
 use const PASSWORD_DEFAULT;
@@ -103,7 +107,7 @@ class PatchRecoveryItemModule extends AbstractModule
         [$data, $errors] = $this->validateItemData($data);
 
         if (!array_key_exists('code', $errors) &&
-            $recoveryModel->getCode() !== $code
+            $recoveryModel->getCode() !== $data['code']
         ) {
             $errors['code'] = 'mismatch';
         }
@@ -132,7 +136,7 @@ class PatchRecoveryItemModule extends AbstractModule
 
     protected function getRequestItemKeys(): ?array
     {
-        if ($this->getPasswordConfig()->confirmNew()) {
+        if ($this->getPasswordConfig()->getConfirmNew()) {
             $keys = ['password1', 'password2'];
         } else {
             $keys = ['password'];
@@ -149,7 +153,7 @@ class PatchRecoveryItemModule extends AbstractModule
 
         $data['code'] = pyncer_string_nullify($data['code']);
 
-        if ($code === null) {
+        if ($data['code'] === null) {
             $errors['code'] = 'required';
         }
 
@@ -179,8 +183,8 @@ class PatchRecoveryItemModule extends AbstractModule
             }
         }
 
-        if ($password !== null && !$passwordErrors) {
-            $passwordRule = $this->getPasswordConfig->getPasswordRule();
+        if ($password !== null && !$errors) {
+            $passwordRule = $this->getPasswordConfig()->getValidationRule();
 
             if (!$passwordRule->isValid($password)) {
                 $errors['password'] = $passwordRule->getError();
