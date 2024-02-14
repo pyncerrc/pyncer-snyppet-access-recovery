@@ -1,5 +1,5 @@
 <?php
-namespace Pyncer\Snyppet\Access\User\Table\User;
+namespace Pyncer\Snyppet\Access\Table\User;
 
 use DateTime;
 use DateTimeInterface;
