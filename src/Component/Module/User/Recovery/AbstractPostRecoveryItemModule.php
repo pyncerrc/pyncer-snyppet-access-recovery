@@ -335,7 +335,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
     abstract protected function sendRecoveryCode(
         RecoveryModel $recoveryModel,
         UserModel $userModel,
-        $email,
-        $phone,
+        ?string $email,
+        ?string $phone,
     ): bool;
 }
