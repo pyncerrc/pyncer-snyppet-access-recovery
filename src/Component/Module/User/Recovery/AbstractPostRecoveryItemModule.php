@@ -5,9 +5,10 @@ use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Pyncer\App\Identifier as ID;
 use Pyncer\Component\Module\AbstractModule;
 use Pyncer\Database\Exception\QueryException;
-use Pyncer\Snyppet\Access\Table\User\UserMapper;
+use Pyncer\Snyppet\Access\Table\User\UserModel;
 use Pyncer\Snyppet\Access\Table\User\RecoveryMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryModel;
+use Pyncer\Snyppet\Access\User\AccessManager;
 use Pyncer\Snyppet\Access\User\LoginMethod;
 use Pyncer\Validate\Rule\EmailRule;
 use Pyncer\Validate\Rule\PhoneRule;
@@ -160,6 +161,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
 
         if ($loginValue === '') {
             $errors = [$loginMethod->value => 'required'];
+            $userModel = null;
         } else {
             $accessManager = $this->initializeAccessManager();
 
@@ -266,7 +268,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
     }
 
     protected function validateUsernameContact(
-        UserModel $userModel,
+        ?UserModel $userModel,
         ?string $email,
         ?string $phone
     ): array
@@ -277,7 +279,8 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             $errors = [
                 'contact' => 'required',
             ];
-        } elseif ($userModel->getPhone() === null &&
+        } elseif ($userModel &&
+            $userModel->getPhone() === null &&
             $userModel->getEmail() === null
         ) {
             $errors = [
@@ -294,7 +297,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
 
             if (!$phoneRule->isValid($phone)) {
                 $errors['phone'] = 'invalid';
-            } else {
+            } elseif ($userModel) {
                 $phone = $phoneRule->clean($phone);
                 $phoneMatch = $phoneRule->clean($userModel->getPhone());
 
@@ -310,7 +313,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
 
             if (!$emailRule->isValid($email)) {
                 $errors['email'] = 'invalid';
-            } else {
+            } elseif ($userModel) {
                 $email = $emailRule->clean($email);
                 $emailMatch = $emailRule->clean($userModel->getEmail());
 
@@ -321,12 +324,14 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             }
         }
 
-        if ($userModel->getEmail() === null) {
-            $email = null;
-        }
+        if ($userModel) {
+            if ($userModel->getEmail() === null) {
+                $email = null;
+            }
 
-        if ($userModel->getPhone() === null) {
-            $phone = null;
+            if ($userModel->getPhone() === null) {
+                $phone = null;
+            }
         }
 
         return [$email, $phone, $errors];
