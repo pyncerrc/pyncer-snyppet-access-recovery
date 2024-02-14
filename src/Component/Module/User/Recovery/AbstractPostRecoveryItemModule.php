@@ -5,13 +5,15 @@ use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 use Pyncer\App\Identifier as ID;
 use Pyncer\Component\Module\AbstractModule;
 use Pyncer\Database\Exception\QueryException;
+use Pyncer\Http\Message\JsonResponse;
+use Pyncer\Http\Message\Status;
 use Pyncer\Snyppet\Access\Table\User\UserModel;
 use Pyncer\Snyppet\Access\Table\User\RecoveryMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryModel;
 use Pyncer\Snyppet\Access\User\AccessManager;
 use Pyncer\Snyppet\Access\User\LoginMethod;
-use Pyncer\Validate\Rule\EmailRule;
-use Pyncer\Validate\Rule\PhoneRule;
+use Pyncer\Validation\Rule\EmailRule;
+use Pyncer\Validation\Rule\PhoneRule;
 use Pyncer\Utility\Token;
 
 use function Pyncer\code as pyncer_code;
@@ -25,6 +27,7 @@ use const Pyncer\Snyppet\Access\RECOVERY_TOKEN_EXPIRATION as PYNCER_ACCESS_RECOV
 use const Pyncer\Snyppet\Access\USER_PHONE_ALLOW_E164 as PYNCER_ACCESS_USER_PHONE_ALLOW_E164;
 use const Pyncer\Snyppet\Access\USER_PHONE_ALLOW_NANP as PYNCER_ACCESS_USER_PHONE_ALLOW_NANP;
 use const Pyncer\Snyppet\Access\USER_PHONE_ALLOW_FORMATTING as PYNCER_ACCESS_USER_PHONE_ALLOW_FORMATTING;
+use const Pyncer\Snyppet\Access\VALIDATE_LOGIN_NOT_FOUND as PYNCER_ACCESS_VALIDATE_LOGIN_NOT_FOUND;
 use const Pyncer\Snyppet\Access\VALIDATE_CONTACT_MISMATCH as PYNCER_ACCESS_VALIDATE_CONTACT_MISMATCH;
 
 abstract class AbstractPostRecoveryItemModule extends AbstractModule
@@ -32,6 +35,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
     protected ?LoginMethod $loginMethod = null;
     protected ?int $recoveryCodeLength = null;
     protected ?int $recoveryTokenExpiration = null;
+    protected ?bool $validateLoginNotFound = null;
     protected ?bool $validateContactMismatch = null;
 
     public function getLoginMethod(): LoginMethod
@@ -114,6 +118,32 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
         return $this;
     }
 
+    public function getValidateLoginNotFound(): bool
+    {
+        if ($this->validateLoginNotFound !== null) {
+            return $this->validateLoginNotFound;
+        }
+
+        $validateLoginNotFound = PYNCER_ACCESS_VALIDATE_LOGIN_NOT_FOUND;
+
+        $snyppetManager = $this->get(ID::SNYPPET);
+        if ($snyppetManager->has('config')) {
+            $config = $this->get(ID::config());
+
+            $validateLoginNotFound = $config->getInt(
+                'user_validate_login_not_found',
+                $validateLoginNotFound
+            );
+        }
+
+        return $validateLoginNotFound;
+    }
+    public function setValidateLoginNotFound(?bool $value): static
+    {
+        $this->validateLoginNotFound = $value;
+        return $this;
+    }
+
     public function getValidateContactMismatch(): bool
     {
         if ($this->validateContactMismatch !== null) {
@@ -170,8 +200,8 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
                 $loginMethod
             );
 
-            if (!$userModel) {
-                $errors = [$loginMethod->value => 'invalid'];
+            if (!$userModel && $this->getValidateLoginNotFound()) {
+                $errors = [$loginMethod->value => 'not_found'];
             }
         }
 
@@ -226,6 +256,18 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
 
         $dateTime = pyncer_date_time();
         $dateTime->add(new DateInterval('PT' . $this->getRecoveryTokenExpiration() . 'S'));
+
+        // If there is no user model then validate login not found is off so
+        // fake a successful request
+        if ($userModel === null) {
+            return new JsonResponse(
+                Status::SUCCESS_201_CREATED,
+                [
+                    'token' => strval(new Token()),
+                    'expiration_date_time' => $expirationDateTime->format(PYNCER_DATE_TIME_FORMAT),
+                ]
+            );
+        }
 
         try {
             $recoveryMapper = new RecoveryMapper($connection);
@@ -289,7 +331,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
         }
 
         if ($phone !== null) {
-            $poneRule = new PhoneRule(
+            $phoneRule = new PhoneRule(
                 allowNanp: PYNCER_ACCESS_USER_PHONE_ALLOW_NANP,
                 allowE164: PYNCER_ACCESS_USER_PHONE_ALLOW_E164,
                 allowFormatting: PYNCER_ACCESS_USER_PHONE_ALLOW_FORMATTING,
@@ -332,6 +374,9 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             if ($userModel->getPhone() === null) {
                 $phone = null;
             }
+        } else {
+            $email = null;
+            $phone = null;
         }
 
         return [$email, $phone, $errors];
