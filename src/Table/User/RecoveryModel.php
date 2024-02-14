@@ -1,6 +1,7 @@
 <?php
 namespace Pyncer\Snyppet\Access\Table\User;
 
+use DateInterval;
 use DateTime;
 use DateTimeInterface;
 use Pyncer\Data\Model\AbstractModel;
@@ -63,6 +64,7 @@ class RecoveryModel extends AbstractModel
     {
         $dateTime = pyncer_date_time();
         $dateTime->add(new DateInterval('PT' . PYNCER_ACCESS_RECOVERY_TOKEN_EXPIRATION . 'S'));
+        $dateTime = $dateTime->format(PYNCER_DATE_TIME_FORMAT);
 
         return [
             'id' => 0,

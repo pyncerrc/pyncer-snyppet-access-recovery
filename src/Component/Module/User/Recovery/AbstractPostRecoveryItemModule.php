@@ -273,7 +273,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
         try {
             $recoveryMapper = new RecoveryMapper($connection);
             $recoveryModel = new RecoveryModel([
-                'user_id' => $userModel->getUserId(),
+                'user_id' => $userModel->getId(),
             ]);
             $recoveryMapper->insert($recoveryModel);
         } catch (QueryException) {
@@ -289,7 +289,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             );
         }
 
-        if (!$this->sendRecoveryCode($recoverModel, $userModel, $email, $phone)) {
+        if (!$this->sendRecoveryCode($recoveryModel, $userModel, $email, $phone)) {
             return new JsonResponse(
                 Status::CLIENT_ERROR_422_UNPROCESSABLE_ENTITY,
                 [
@@ -298,7 +298,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             );
         }
 
-        $expirationDateTime = $model->getExpirationDateTime()
+        $expirationDateTime = $recoveryModel->getExpirationDateTime()
             ->format(PYNCER_DATE_TIME_FORMAT);
 
         return new JsonResponse(
