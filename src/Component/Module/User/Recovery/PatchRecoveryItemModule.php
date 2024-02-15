@@ -9,6 +9,7 @@ use Pyncer\Http\Message\Response;
 use Pyncer\Http\Message\Status;
 use Pyncer\Exception\UnexpectedValueException;
 use Pyncer\Routing\Path\RoutingPathInterface;
+use Pyncer\Snyppet\Access\Component\Forge\User\PasswordConfigTrait;
 use Pyncer\Snyppet\Access\Table\User\UserMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryMapper;
 use Pyncer\Snyppet\Access\Table\User\RecoveryModel;
@@ -21,9 +22,9 @@ use const PASSWORD_DEFAULT;
 
 class PatchRecoveryItemModule extends AbstractModule
 {
+    use PasswordConfigTrait;
+
     protected ?RoutingPathInterface $idRoutingPath = null;
-    protected ?PasswordConfig $passwordConfig = null;
-    protected ?PasswordConfig $defaultPasswordConfig = null;
 
     public function getIdRoutingPath(): ?RoutingPathInterface
     {
@@ -32,31 +33,6 @@ class PatchRecoveryItemModule extends AbstractModule
     public function setIdRoutingPath(?RoutingPathInterface $value): static
     {
         $this->idRoutingPath = $value;
-        return $this;
-    }
-
-    public function getPasswordConfig(): ?PasswordConfig
-    {
-        if ($this->passwordConfig !== null) {
-            return $this->passwordConfig;
-        }
-
-        if ($this->defaultPasswordConfig === null) {
-            $config = null;
-
-            $snyppetManager = $this->get(ID::SNYPPET);
-            if ($snyppetManager->has('config')) {
-                $config = $this->get(ID::config());
-            }
-
-            $this->defaultPasswordConfig = new PasswordConfig($config);
-        }
-
-        return $this->defaultPasswordConfig;
-    }
-    public function setPasswordConfig(?PasswordConfig $value): static
-    {
-        $this->passwordConfig = $value;
         return $this;
     }
 
