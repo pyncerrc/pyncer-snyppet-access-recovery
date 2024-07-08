@@ -210,11 +210,11 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             $email = $this->parsedBody->getString('email', null);
             $phone = $this->parsedBody->getString('phone', null);
         } elseif ($loginMethod === LoginMethod::EMAIL) {
-            $email = $userModel->getEmail();
+            $email = $userModel?->getEmail();
             $phone = null;
         } elseif ($loginMethod === LoginMethod::PHONE) {
             $email = null;
-            $phone = $userModel->getPhone();
+            $phone = $userModel?->getPhone();
         }
 
         [$email, $phone, $contactErrors] = $this->validateUsernameContact(
