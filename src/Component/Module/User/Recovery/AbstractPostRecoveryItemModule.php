@@ -171,7 +171,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
         return $this;
     }
 
-    protected function initializeAccessManager(): AccessManager
+    protected function forgeAccessManager(): AccessManager
     {
         $connection = $this->get(ID::DATABASE);
         return new AccessManager($connection);
@@ -181,7 +181,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
     {
         $connection = $this->get(ID::DATABASE);
 
-        $accessManager = $this->initializeAccessManager();
+        $accessManager = $this->forgeAccessManager();
 
         $loginMethod = $this->getLoginMethod();
 
@@ -194,7 +194,7 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
             $errors = [$loginMethod->value => 'required'];
             $userModel = null;
         } else {
-            $accessManager = $this->initializeAccessManager();
+            $accessManager = $this->forgeAccessManager();
 
             $userModel = $accessManager->getUserFromLogin(
                 $loginValue,
