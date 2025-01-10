@@ -19,6 +19,8 @@ use function Pyncer\Array\ensure_keys as pyncer_array_ensure_keys;
 use function Pyncer\String\nullify as pyncer_string_nullify;
 
 use const PASSWORD_DEFAULT;
+use const Pyncer\DATE_TIME_NOW as PYNCER_DATE_TIME_NOW;
+use const Pyncer\Snyppet\Access\RECOVERY_MAX_ATTEMPTS as PYNCER_ACCESS_RECOVERY_MAX_ATTEMPTS;
 
 class PatchRecoveryItemModule extends AbstractModule
 {
@@ -78,6 +80,24 @@ class PatchRecoveryItemModule extends AbstractModule
             );
         }
 
+        if ($recoveryModel->getExpirationDateTime() < PYNCER_DATE_TIME_NOW) {
+            return new JsonResponse(
+                Status::CLIENT_ERROR_401_UNAUTHORIZED,
+                [
+                    'errors' => ['general' => 'expired']
+                ]
+            );
+        }
+
+        if ($recoveryModel->getAttempts() >= PYNCER_ACCESS_RECOVERY_MAX_ATTEMPTS) {
+            return new JsonResponse(
+                Status::CLIENT_ERROR_422_UNPROCESSABLE_ENTITY,
+                [
+                    'errors' => ['code' => 'attempts']
+                ]
+            );
+        }
+
         $data = $this->getRequestItemData();
 
         [$data, $errors] = $this->validateItemData($data);
@@ -89,6 +109,8 @@ class PatchRecoveryItemModule extends AbstractModule
         }
 
         if ($errors) {
+            $this->increaseRecoveryAttempts($recoveryModel->getId());
+
             return new JsonResponse(
                 Status::CLIENT_ERROR_422_UNPROCESSABLE_ENTITY,
                 ['errors' => $errors]
@@ -101,6 +123,23 @@ class PatchRecoveryItemModule extends AbstractModule
         return new Response(
             Status::SUCCESS_204_NO_CONTENT
         );
+    }
+
+    protected function increaseRecoveryAttempts(int $id): void
+    {
+        $connection = $this->get(ID::DATABASE);
+
+        $attempts = $connection->functions('user__recovery', 'Add')
+            ->arguments('attempts', 1);
+
+        $connection->update('user__recovery')
+            ->values([
+                'attempts' => $attempts
+            ])
+            ->where([
+                'id' => $id
+            ])
+            ->execute();
     }
 
     protected function getRequestItemData(): array

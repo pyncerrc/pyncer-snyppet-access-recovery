@@ -22,6 +22,7 @@ class Install extends AbstractInstall
             ->int('user_id', IntSize::BIG)->index()
             ->string('token', 96)->index()
             ->string('code', 25)->index()
+            ->int('attempts')->default(0)->index()
             ->dateTime('expiration_date_time')->index()
             ->foreignKey(null, 'user_id')
                 ->references('user', 'id')

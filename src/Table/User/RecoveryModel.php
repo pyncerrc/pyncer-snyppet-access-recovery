@@ -60,6 +60,16 @@ class RecoveryModel extends AbstractModel
         return $this;
     }
 
+    public function getAttempts(): int
+    {
+        return $this->get('attempts');
+    }
+    public function setAttempts(int $value): static
+    {
+        $this->set('attempts', $value);
+        return $this;
+    }
+
     public static function getDefaultData(): array
     {
         $dateTime = pyncer_date_time();
@@ -72,6 +82,7 @@ class RecoveryModel extends AbstractModel
             'token' => strval(new Token()),
             'code' => pyncer_code(PYNCER_ACCESS_RECOVERY_CODE_LENGTH),
             'expiration_date_time' => $dateTime,
+            'attempts' => 0,
         ];
     }
 }
