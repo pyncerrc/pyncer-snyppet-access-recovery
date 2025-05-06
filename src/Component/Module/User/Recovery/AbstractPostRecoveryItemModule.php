@@ -290,6 +290,8 @@ abstract class AbstractPostRecoveryItemModule extends AbstractModule
         }
 
         if (!$this->sendRecoveryCode($recoveryModel, $userModel, $email, $phone)) {
+            $errors = ['general' => 'send'];
+
             return new JsonResponse(
                 Status::CLIENT_ERROR_422_UNPROCESSABLE_ENTITY,
                 [
